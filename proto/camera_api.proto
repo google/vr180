@@ -1,0 +1,1589 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Protos for messages used in both the Bluetooth and Wi-Fi based camera APIs.
+//
+// * Requests must be processed in the order received.
+// * Responses with CameraApiResponse.ResponseStatus.OK should be
+//   fulfilled immediately or within a reasonably short time window, no longer
+//   than a few seconds. STATUS requests after an OK response should reflect
+//   the update state based on all previously OK responses.
+// * When a response without CameraApiResponse.ResponseStatus.OK is
+//   returned, subsequent STATUS requests must accurately reflect the state of
+//   the camera.
+// * Unless explicitly marked as not required, state changes that modify the
+//   data in CameraStatus should result in the Camera pinging the "status"
+//   Bluetooth characteristic in order to inform the VR180 application of the
+//   state change. This should happen within 1/2 second of the state change.
+
+syntax = "proto2";
+
+package vr180;
+option java_package = "com.google.vr180";
+option java_outer_classname = "CameraApi";
+option objc_class_prefix = "VR180P";
+
+// Describes the dimensions of a video/photo frame in pixels.
+message FrameSize {
+  optional int32 frame_width = 1;
+  optional int32 frame_height = 2;
+}
+
+// Describes encoding formats for VR video.
+enum EncodingFormat {
+  // Encoding with h.264 video.
+  H264 = 0;
+  // Encoding with VP9 video.
+  VP9 = 1;
+  // Encoding with h.265/HEVC video.
+  H265 = 2;
+  // Unknown format.
+  UNKNOWN_ENCODING_FORMAT = 3;
+}
+
+// Describes an option for the Field-of-View. This lets the user specify how
+// the sensor will be cropped to produce the output image.
+message FieldOfView {
+  // The horizontal field of view in degrees.
+  optional float horizontal_fov = 1;
+  // The vertical field of view in degrees.
+  optional float vertical_fov = 2;
+}
+
+// Represents a Range of values
+message Range {
+  // The minimum supported value (inclusive).
+  optional float min = 1;
+  // The maximum supported value (inclusive).
+  optional float max = 2;
+
+  // If specified, specifies the minimum step for supported values.
+  // In this case valid values follow:
+  //   value = min + N * step
+  // Where value <= max and N is an integer >= 0.
+  //
+  // If not specified, any floating point value >= min and <= max is assumed
+  // to be valid.
+  optional float step = 3;
+}
+
+// Describes the projection type of VR video.
+enum ProjectionType {
+  // Both eyes are using fisheye projection (cropped and scaled from camera
+  // sensor directly).
+  DEFAULT_FISHEYE = 0;
+  // Both eyes are using equirect projection (already reprojected to equirect).
+  EQUIRECT = 1;
+}
+
+// Describes a VR video recording mode.
+message VideoMode {
+  optional FrameSize frame_size = 1;
+
+  // Describes the playback rate of the video in fps.
+  optional float frames_per_second = 2;
+  optional int64 bits_per_second = 3;
+  // The encoding format of the video.
+  optional EncodingFormat encoding_format = 4
+      [default = UNKNOWN_ENCODING_FORMAT];
+  // The field of view of the frame.
+  optional FieldOfView field_of_view = 5;
+  // The projection type of the view of each eye.
+  optional ProjectionType projection_type = 6 [default = DEFAULT_FISHEYE];
+}
+
+// Describes a viewfinder mode.
+// Encoding format and bitrate are determined by the webrtc system.
+message ViewfinderMode {
+  // The size of the captured preview frames.
+  optional FrameSize frame_size = 1;
+  // The number of frames per second captured.
+  optional float frames_per_second = 2;
+
+  // The type of stereo used by the viewfinder.
+  enum StereoMode {
+    // The viewfinder contains a single eye.
+    STEREO_MODE_DEFAULT_MONO = 0;
+    // The viewfinder contains both eyes, in an arrangement that follows the
+    // longer side in aspect ratio (e.g. landscape is left-right, portrait is
+    // over-under).
+    // This is necessary (instead of defining left-right or top-bottom), since
+    // some cameras can flip back and forth midstream.
+    STEREO_MODE_STEREO_LONG_SIDE = 1;
+  }
+
+  optional StereoMode stereo_mode = 3 [default = STEREO_MODE_DEFAULT_MONO];
+}
+
+// Describes a VR photo mode.
+message PhotoMode {
+  optional FrameSize frame_size = 1;
+  // The field of view of the frame.
+  optional FieldOfView field_of_view = 2;
+}
+
+// Describes a white balance mode, patterned on the Camera2 api white-balance
+// modes
+// (https://developer.android.com/reference/android/hardware/camera2/CameraMetadata.html).
+enum WhiteBalanceMode {
+  // The white balance mode is unknown.
+  UNKNOWN_WHITE_BALANCE_MODE = 0;
+
+  // The camera device's auto-white balance routine is active.
+  AUTO = 1;
+
+  // The camera device's auto-white balance routine is disabled; the camera
+  // device uses incandescent light as the assumed scene illumination for white
+  // balance. While the exact white balance transforms are up to the camera
+  // device, they will approximately match the CIE standard illuminant A.
+  INCANDESCENT = 2;
+
+  // The camera device's auto-white balance routine is disabled; the camera
+  // device uses fluorescent light as the assumed scene illumination for white
+  // balance. While the exact white balance transforms are up to the camera
+  // device, they will approximately match the CIE standard illuminant F2.
+  FLUORESCENT = 3;
+
+  // The camera device's auto-white balance routine is disabled; the camera
+  // device uses warm fluorescent light as the assumed scene illumination for
+  // white balance. While the exact white balance transforms are up to the
+  // camera device, they will approximately match the CIE standard illuminant
+  // F4.
+  WARM_FLUORESCENT = 4;
+
+  // The camera device's auto-white balance routine is disabled; the camera
+  // device uses daylight light as the assumed scene illumination for white
+  // balance. While the exact white balance transforms are up to the camera
+  // device, they will approximately match the CIE standard illuminant D65.
+  DAYLIGHT = 5;
+
+  // The camera device's auto-white balance routine is disabled; the camera
+  // device uses cloudy daylight light as the assumed scene illumination for
+  // white balance.
+  CLOUDY_DAYLIGHT = 6;
+
+  // The camera device's auto-white balance routine is disabled; the camera
+  // device uses twilight light as the assumed scene illumination for white
+  // balance.
+  TWILIGHT = 7;
+
+  // The camera device's auto-white balance routine is disabled; the camera
+  // device uses shade light as the assumed scene illumination for white
+  // balance.
+  SHADE = 8;
+}
+
+// Describes the type of metering to use for determining exposure.
+enum MeteringMode {
+  // The metering mode is unknown.
+  UNKNOWN_METERING_MODE = 0;
+  // Center metering.
+  CENTER = 1;
+  // Spot metering.
+  SPOT = 2;
+}
+
+// Describes the supported manual exposure time values.
+message ExposureTimeRange {
+  // The minimum supported exposure time, in nanoseconds.
+  // MUST be > 0.
+  optional int64 min_exposure_time_ns = 1;
+  // The maximum supported exposure time, in nanoseconds.
+  // MUST be >= min_expsoure_time_ns.
+  optional int64 max_exposure_time_ns = 2;
+}
+
+// Defines the abilities of the camera, including what protocol it implements,
+// which recording modes are supported, which camera features are allowed,
+// and various other data about the camera which doesn't change (like the
+// Model name and Manufacturer).
+// The CameraCapabilities are fetched when the camera is paired and cached, so
+// they cannot change. They are re-fetched if the camera's firmware version
+// changes, so the camera can add new capabilities after an update.
+//
+// NEXT ID: 24
+message CameraCapabilities {
+  // Describes the camera's WiFi capability
+  enum WifiCapability {
+    // WiFi capability is unknown or not set. Default to WIFI_DIRECT_SUPPORTED.
+    UNKNOWN = 0;
+    // The camera has full support of WiFi Direct and it will use the WiFi
+    // p2p interface to start AP
+    WIFI_DIRECT_SUPPORTED = 1;
+    // The camera does not support WiFi Direct, but it allows AP (Access Point)
+    // mode and STA (Station) mode to coexist, i.e., when the camera is
+    // connected to a router, it can at the same time enable its hotspot and
+    // allow the phone to connect without disconnecting from the router.
+    WIFI_AP_STA_COEXIST = 2;
+    // The camera does not support WiFi Direct and does not allow AP and STA
+    // mode to coexist, i.e., the camera has to disconnect from the router
+    // before enabling its hotspot.
+    WIFI_AP_STA_NO_COEXIST = 3;
+  }
+
+  // Describes the camera's update capability, including whether it supports
+  // push or OTA updates.
+  message UpdateCapability {
+    // Whether the camera supports an OTA update. This means that the camera is
+    // able to download its own updates.
+    optional bool supports_ota_update = 1 [default = true];
+
+    // Whether the camera supports a push update via the PUT
+    // /update/[updatename] HTTP api. The update_download_url must be specified
+    // with the location to request updates from.
+    //
+    // Note that a camera MAY support both push and ota update, although it is
+    // recommended to only support one. If both are supported, the push update
+    // mechanism takes preference (VR180 app will try to download and push
+    // updates), although the camera can also try to download updates on its
+    // own.
+    optional bool supports_push_update = 2;
+
+    // If supports_push_update is set, this specifies the URL which contains a
+    // possible update. This url MUST support HTTPS. VR180 app will do a GET
+    // request for the url. If an update is available, it should return 200
+    // (possibly after a redirect). If no update is available, it should return
+    // 404. VR180 app will then download and push the update to the camera. For
+    // example, the value of this url could be:
+    // https://updateserver.com/firmwareupdates?currentVersion=20180315
+    // And the update server could decide whether to provide an update based on
+    // the camera's current version.
+    optional string update_download_url = 3;
+  }
+
+  // The supported version of the Camera API protocol. Should be 0.
+  optional int32 protocol_version = 1;
+
+  // The name of the camera manufacturer.
+  optional string manufacturer_name = 2;
+
+  // The name of the camera model.
+  optional string model_name = 3;
+
+  // A list of available modes for VR video recording. Should be empty if video
+  // recording is not supported.
+  repeated VideoMode supported_video_modes = 4;
+
+  // A list of available modes for VR photo capture. Should be empty if photo
+  // capture is not supported.
+  repeated PhotoMode supported_photo_modes = 5;
+
+  // A list of video modes supported for live broadcasting. Should be empty if
+  // live broadcasting is not supported.
+  repeated VideoMode supported_live_modes = 6;
+
+  // A list of modes supported for viewfinder. These define response formats
+  // that can be returned over the live viewfinder webrtc stream.
+  // The active viewfinder mode is determined by the viewfinder_mode field set
+  // on the active capture mode.
+  // If no viewfinder modes are supported, then viewfinder is disabled.
+  repeated ViewfinderMode supported_viewfinder_modes = 7;
+
+  // A list of available white balance options.
+  repeated WhiteBalanceMode supported_white_balance_modes = 9;
+
+  // A list of available metering modes.
+  repeated MeteringMode supported_metering_modes = 10;
+
+  // A list of supported ISO levels.
+  repeated int32 supported_iso_levels = 11;
+
+  // Specifies whether the camera supports flat color (unprocessed color).
+  optional bool supports_flat_color = 12;
+
+  // Specifies whether the camera supports exposure value adjustment.
+  // Cameras specifying this flag should support [-2,2] EV compensation.
+  optional bool supports_exposure_value_adjustment = 13;
+
+  // If specified, contains a URL for a service that returns a text/plain
+  // response consisting solely of the desired firmware version for the camera.
+  // If this does not match the firmware_version specified in the camera's
+  // UpdateStatus, the companion app will prompt the user to connect the camera
+  // to the internet, where it should check for updates.
+  // For example, url could be "http://vr_camera.google.com/latest.txt" and
+  // return "2", which would mean version 2 is desired.
+  optional string firmware_latest_version_url = 14;
+
+  // Whether the camera supports updating the camera calibration data using the
+  // CONFIGURE api.
+  optional bool supports_calibration_update = 15 [deprecated = true];
+
+  // The minimum supported exposure adjustment step. For example if set to
+  // 1/3, the camera can change exposure_value_adjustment in 1/3 intervals. If
+  // default (0), then any exposure adjustment is allowed.
+  // Regardless of the setting, the camera should use the nearest supported step
+  // to the configured exposure_value_adjustment in CaptureMode.
+  optional float exposure_adjustment_step = 16;
+
+  // The supported manual exposure time range. If specified, this indicates that
+  // the camera supports manual exposure time settings.
+  optional ExposureTimeRange exposure_time_range = 17;
+
+  // The WiFi capability of the camera. Default to WIFI_DIRECT_SUPPORTED if not
+  // set.
+  optional WifiCapability wifi_capability = 18;
+
+  // The update capabilities of the camera. Defaults to supports_ota_update =
+  // true and supports_push_update = false.
+  optional UpdateCapability update_capability = 20;
+
+  // Specifies whether the camera supports setting a timer to automatically stop
+  // capture via the CaptureRequest.auto_stop_duration_ms option.
+  optional bool supports_auto_stop_duration_ms = 21;
+
+  // Reserved for common feature development. Do not use for customization.
+  extensions 8, 19, 22, 23, 1000 to 2000;
+  // Reserved for customization.
+  extensions 2001 to max;
+}
+
+// Describes the configuration of a live stream.
+message LiveStreamMode {
+  // The video encoding mode.
+  optional VideoMode video_mode = 1;
+  // The RTMP endpoint to upload data to (e.g.
+  // rtmp://x.rtmp.youtube.com/live2).
+  optional string rtmp_endpoint = 2;
+  // The stream name/key for the stream.
+  optional string stream_name_key = 3;
+  // The suggested starting bitrate (in bits per second) for streaming, based on
+  // network conditions as detected/recalled by the companion app.
+  optional int64 suggested_initial_bitrate = 4;
+}
+
+// Configuration data for the display brightness.
+message IndicatorBrightnessConfiguration {
+  // The brightness level for LEDs on the device (from 0=minimum to
+  // 100=maximum).
+  optional int32 led_brightness = 1;
+}
+
+// Configuration for the camera's sleep behavior.
+message SleepConfiguration {
+  // The time to remain awake before going to sleep in seconds.
+  optional int32 wake_time_seconds = 1;
+  // The time to remain in sleep mode before powering off in seconds.
+  optional int32 sleep_time_seconds = 2;
+}
+
+// Information about the configured capture settings of the camera.
+// When passed to a SET_CAPTURE_MODE request, unspecified values indicate that
+// the camera should retain the current setting.
+// When returned as a part of the CameraStatus, fields may be unspecified if
+// the camera doesn't support any configuration of the relevant setting.
+//
+// NEXT ID: 18
+message CaptureMode {
+  // Camera capture type
+  enum CaptureType {
+    reserved 3;
+
+    VIDEO = 0;
+    PHOTO = 1;
+    LIVE = 2;
+    UNKNOWN_CAPTURE_TYPE = 4;
+  }
+
+  reserved 1, 2, 3, 4, 14, 17;
+
+  // The encoding mode for data returned from a live viewfinder webrtc stream.
+  optional ViewfinderMode viewfinder_mode = 5;
+
+  // Specifies the white balance mode setting.
+  optional WhiteBalanceMode white_balance_mode = 6;
+
+  // Specifies the metering mode to use.
+  optional MeteringMode metering_mode = 7;
+
+  // Specifies the iso_level. iso_level = 0 is defined to be auto ISO.
+  // If specified, exposure_time can still be adjusted (within the automatic
+  //   range) to handle exposure compensation.
+  // If both iso_level and exposure_time_ns are specified, exposure compensation
+  //   should be disabled and manual exposure applies.
+  optional int32 iso_level = 8;
+
+  // Whether flat color is enabled.
+  optional bool flat_color = 9;
+
+  // Amount to adjust frame exposure (specified in stops).
+  optional float exposure_value_adjustment = 10;
+
+  // The configured mode for video capture
+  optional VideoMode configured_video_mode = 11;
+
+  // The configured mode for photo capture
+  optional PhotoMode configured_photo_mode = 12;
+
+  // The configured mode for live stream
+  optional LiveStreamMode configured_live_mode = 13;
+
+  // Indicates the currently active capture type of the camera.
+  optional CaptureType active_capture_type = 15
+      [default = UNKNOWN_CAPTURE_TYPE];
+
+  // The exposure time of the camera in nanoseconds.
+  // If exposure_time_ns = 0 (default), then automatic/default exposure time
+  //   settings should be used.
+  // Other values set for exposure_time_ns should fall within the supported
+  //   range specified in the CameraCapapbilities.exposure_time_range. When
+  //   specified, these indicate that the camera should use manual exposure
+  //   time. Exposure can be compensated by using ISO setting if ISO is AUTO.
+  //   If both exposure_time_ns and a specific iso_level setting are included,
+  //   exposure compensation should be disabled and the manual exposure setting
+  //   applied.
+  optional int64 exposure_time_ns = 16;
+}
+
+// A generic 3-d vector.
+message Vector3 {
+  optional float x = 1;
+  optional float y = 2;
+  optional float z = 3;
+}
+
+// The status information about the camera.
+message CameraStatus {
+  message RecordingStatus {
+    enum RecordingState {
+      // The camera is not recording but ready to record.
+      IDLE = 0;
+      // The camera is recording.
+      RECORDING = 1;
+      // The recording state is unknown.
+      UNKNOWN_RECORDING_STATE = 2;
+    }
+
+    // Additional indication of the state of an active live streaming.
+    message LiveStreamStatus {
+      enum LiveStreamErrorState {
+        // Default/No error.
+        UNKNOWN_NO_LIVE_STREAM_ERROR = 0;
+        // Unable to reach the live stream server (timeout connecting).
+        SERVER_NOT_REACHABLE = 1;
+        reserved 2, 3, 4;
+        // There was a protocol error communicating with the server.
+        PROTOCOL_ERROR = 5;
+        // No rtmp endpoint was specified.
+        NO_STREAMING_TARGET = 6;
+        // A connection error occurred while streaming.
+        STREAM_ERROR = 7;
+        // There was an error in the codec or camera.
+        CODEC_ERROR = 8;
+      }
+
+      // The current state of the active live stream.
+      optional LiveStreamErrorState error_state = 1;
+      // The number of dropped frames.
+      optional int64 dropped_frames = 2;
+      // The current upload bitrate estimate (in bits per second).
+      optional int64 upload_bitrate = 3;
+      // The observed bitrate estimate of the encoder (in bits per second).
+      optional int64 source_bitrate = 4;
+      // The current target encoder video bitrate (in bits per second).
+      optional int64 target_bitrate = 5;
+    }
+
+    // Whether the camera is recording.
+    optional RecordingState recording_state = 1
+        [default = UNKNOWN_RECORDING_STATE];
+
+    // If recording_state = RECORDING, reports the timestamp for when the
+    // current recording started (whether video or live streaming), defined in
+    // milliseconds since 1Jan1970.
+    // device_timestamp - recording_start_time gives the amount of video
+    // captured so far.
+    optional int64 recording_start_time = 10;
+
+    // The status of an active live stream.
+    optional LiveStreamStatus live_stream_status = 2;
+  }
+
+  // Information about the camera's firmware version and available updates.
+  message UpdateStatus {
+    // The current firmware version.
+    optional string firmware_version = 1;
+    // The last time the camera checked for a firmware update, specified in
+    // milliseconds since Jan. 1, 1970.
+    optional int64 last_firmware_check_timestamp = 2;
+    // The version number of a firmware update, if one is available.
+    optional string available_update_version = 3;
+    // The size of the update download in bytes.
+    optional int64 update_size = 4;
+    // The download progress of the update in bytes. If the download is ready to
+    // install, update_size MUST equal downloaded_update_bytes.
+    optional int64 downloaded_update_bytes = 5;
+    // The update is waiting for user approval.
+    optional bool waiting_for_approval = 6;
+  }
+
+  // Information about the battery.
+  message BatteryStatus {
+    // Status of battery charging, defined analogously to
+    // https://developer.android.com/reference/android/os/BatteryManager.html
+    enum ChargingState {
+      // The state of the battery is unknown.
+      BATTERY_STATUS_UNKNOWN = 1;
+      // The battery is charging from external power.
+      BATTERY_STATUS_CHARGING = 2;
+      // The device is running from battery power.
+      BATTERY_STATUS_DISCHARGING = 3;
+      // The battery is running from external power but not charging.
+      BATTERY_STATUS_NOT_CHARGING = 4;
+      // The battery is fully charged.
+      BATTERY_STATUS_FULL = 5;
+    }
+
+    // The state of the battery, which controls what kind of notification the
+    // user should see.
+    enum BatteryWarningLevel {
+      // The warning level is unknown.
+      UNKNOWN_BATTERY_WARNING_LEVEL = 0;
+      // No warning.
+      OK = 1;
+      // The battery is low.
+      LOW = 2;
+      // The device cannot take any more videos/pictures.
+      SHUTDOWN = 3;
+    }
+
+    // The charging state of the battery.
+    optional ChargingState charging_state = 1;
+
+    // The battery level as a percentage 0-100%.
+    optional int32 battery_percentage = 2;
+
+    // The battery voltage in millivolts.
+    optional int32 battery_voltage = 3;
+
+    // The battery temperature in tenths of a degree Centigrade.
+    optional int32 battery_temperature = 4;
+
+    // The warning level for the battery to show to the user.
+    optional BatteryWarningLevel warning_level = 5
+        [default = UNKNOWN_BATTERY_WARNING_LEVEL];
+  }
+
+  // Information about the media storage for the device.
+  message StorageStatus {
+    // States of the SD card reader.
+    enum SdCardStatus {
+      // An SD card is inserted and working.
+      OK = 0;
+      // No card is inserted.
+      MISSING = 1;
+      // There is an error reading/writing to storage.
+      ERROR = 2;
+      // The device has no sd card reader.
+      NO_SDCARD_READER = 3;
+      // The sd card state is unknown.
+      UNKNOWN_SD_CARD_STATUS = 4;
+    }
+
+    // Whether the file system supports files > 4GB.
+    enum LargeFileSupport {
+      // Could not be determined.
+      LARGE_FILE_SUPPORT_UNKNOWN = 0;
+      // Large file are supported.
+      SUPPORTED = 1;
+      // Only files smaller than 4GB are supported (e.g. FAT32).
+      SMALL_FILES_ONLY = 2;
+    }
+
+    // The state of the camera SD card.
+    optional SdCardStatus card_status = 1 [default = UNKNOWN_SD_CARD_STATUS];
+
+    // Free space on the camera SD card (in bytes).
+    optional int64 free_space = 2;
+
+    // Total space available on the camera SD card (in bytes).
+    optional int64 total_space = 3;
+
+    // Whether free space is below threshold so that we should show an error.
+    optional bool free_space_below_error_threshold = 4;
+
+    // The free space available in the camera's internal storage (in bytes).
+    // Should be 0 (default) if the camera has no internal storage for
+    // recording.
+    optional int64 internal_free_space = 5;
+
+    // The total space available in the camera's internal storage (in bytes).
+    // Should be 0 (default) if the camera has no internal storage for
+    // recording.
+    optional int64 internal_total_space = 6;
+
+    // Indicates whether the sd card's file system supports files above 4 GB.
+    optional LargeFileSupport sd_card_large_file_support = 7;
+  }
+
+  // Information about the network connectivity of the device.
+  message HttpServerStatus {
+    reserved 1;
+
+    // The hostnames of the camera on its network endpoint (can be simply its
+    // IP address).
+    // Multiple hostnames can be reported if the camera has different ip
+    // addresses on different network interfaces.
+    repeated string camera_hostname = 2;
+
+    // The port number of the camera's HTTPS server.
+    optional int32 camera_port = 3;
+
+    // The signature of the camera's HTTPS server certificate.
+    optional bytes camera_certificate_signature = 4;
+  }
+
+  // Information about the Mobile Data connectivity of the device.
+  message MobileNetworkStatus {
+    enum NetworkState {
+      UNKNOWN = 0;
+      DISCONNECTED = 1;
+      DISCONNECTING = 2;
+      CONNECTED = 3;
+      CONNECTING = 4;
+    }
+
+    // Status of the sim card. Matches definition in Android's
+    // TelephonyManager.getSimState()
+    // https://developer.android.com/reference/android/telephony/TelephonyManager.html#getSimState
+    enum SimCardState {
+      SIM_STATE_UNKNOWN = 0;
+      // No SIM card is inserted.
+      SIM_STATE_ABSENT = 1;
+      // The card is locked and requires a pin to unlock.
+      SIM_STATE_PIN_REQUIRED = 2;
+      // The card is locked and requires the user's PUK to unlock.
+      SIM_STATE_PUK_REQUIRED = 3;
+      // The card requires a network PIN to unlock.
+      SIM_STATE_NETWORK_LOCKED = 4;
+      // The sim card is ready.
+      SIM_STATE_READY = 5;
+      // The sim card is not ready.
+      SIM_STATE_NOT_READY = 6;
+      // The sim card is permanently disabled.
+      SIM_STATE_PERMANENTLY_DISABLED = 7;
+      // The sim card is present but faulty.
+      SIM_STATE_CARD_IO_ERROR = 8;
+      // The sim card is not usable due to carrier restrictions.
+      SIM_STATE_CARD_RESTRICTED = 9;
+    }
+
+    // Specifies whether the mobile data connection is enabled by the user.
+    optional bool enabled = 1;
+    // Specifies the connection state of the mobile data network.
+    optional NetworkState state = 2;
+    // Signal strength of the mobile network connection, specified as [0,4].
+    optional int32 signal_strength = 3;
+    // Carrier name of the network.
+    optional string carrier_name = 4;
+    // Whether the network is roaming.
+    optional bool roaming = 5;
+    // The type of network connected (e.g. LTE, HSPA+).
+    optional string network_type = 6;
+    // The approximate data rate of the network connection.
+    optional int64 approx_bytes_per_second = 7;
+    // The status of the sim card.
+    optional SimCardState sim_card_state = 8;
+  }
+
+  // Information about the current audio volume level.
+  message AudioVolumeStatus {
+    // The current volume level. 0 = muted.
+    optional int32 volume = 1;
+    // The maximum possible volume level.
+    optional int32 max_volume = 2;
+  }
+
+  // Extended information about the wifi connectivity (beyond the currently
+  // active ssid, which is in the root status message).
+  message WifiStatus {
+    // The supplicant state of the wifi connection.
+    optional WifiSupplicantState wpa_supplicant_state = 1;
+
+    // The signal strength (RSSI) of the of the active wifi connection (in dBm).
+    optional sint32 signal_level = 2;
+
+    // If an error occurred connecting to a network requested via a
+    // CONFIGURATION request, details of that error.
+    optional WifiConnectionErrorType connection_error_type = 3;
+
+    // The WiFi country code, e.g. "US". ISO_3166-1 standard.
+    // This will affect the allowed WiFi channels used by the camera.
+    optional string wifi_country_code = 4;
+  }
+
+  // Information about the device's temperature status.
+  message DeviceTemperatureStatus {
+    // The state of the temperature which controls what kind of notification
+    // the user should see.
+    enum TemperatureState {
+      // The temperature state is unknown.
+      UNKNOWN_TEMPERATURE_STATE = 0;
+      // The temperature is within normal operational range.
+      TEMPERATURE_OK = 1;
+      // The temperature is starting to heat up.
+      TEMPERATURE_WARNING = 2;
+      // The device has heated up and may soon stop functioning. This represents
+      // a state where we should take proactive steps to not raise the
+      // temperature further (i.e. turn off viewfinder), and warn the user their
+      // device is getting close to overheating.
+      TEMPERATURE_CRITICAL = 3;
+      // The device has overheated and cannot function.
+      TEMPERATURE_OVERHEATED = 4;
+    }
+
+    // The temperature state of the device.
+    optional TemperatureState device_temperature_state = 1;
+  }
+
+  // Information about the current firmware version and any available updates.
+  optional UpdateStatus update_status = 1;
+
+  // Current recording state of the camera.
+  optional RecordingStatus recording_status = 2;
+
+  // Information about the camera's battery.
+  optional BatteryStatus battery_status = 3;
+
+  // Information about the camera storage.
+  optional StorageStatus storage_status = 4;
+
+  // The capture settings currently configured for the camera.
+  optional CaptureMode active_capture_mode = 5;
+
+  // Wifi connectivity and ip address information of the camera.
+  optional HttpServerStatus http_server_status = 6;
+
+  // The device temperature in tenths of a degree Celsius.
+  optional int32 device_temperature = 7;
+
+  // The current time on the device in milliseconds since 1Jan1970.
+  optional int64 device_timestamp = 8;
+
+  // Mobile data connectivity status. If the device doesn't have a mobile data
+  // radio, this should be omitted.
+  optional MobileNetworkStatus mobile_network_status = 9;
+
+  // A vector representing the direction of down, which allows the app to
+  // display a warning if the user is holding the device in a poor orientation.
+  // This is relative to the camera's intrinsic coordinates specified with
+  // y up, x to the right, and negative z pointing in the direction the camera
+  // is looking.
+  optional Vector3 gravity_vector = 10;
+
+  // If the camera is hosting a Wifi Hotspot, contains connection details for
+  // the camera's network.
+  // If the camera is NOT hosting a hotspot, this field should not be set.
+  optional WifiAccessPointInfo hotspot_access_point_info = 11;
+
+  // Indicates which Wi-Fi access point the camera is currently connected to.
+  optional string active_wifi_ssid = 12;
+
+  // The last modified timestamp of the media collection. This should match the
+  // timestamps in the ListMediaResponse.
+  optional int64 media_last_modified_time = 13;
+
+  // The last time when camera crashed.
+  // This is used to determine whether VR180 app should fetch crash logs from
+  // camera.
+  optional int64 camera_last_crashed_time = 14;
+
+  // Whether device temperature is above the error threshold.
+  //
+  // DEPRECATED: Replace by setting the TemperatureState of the
+  // DeviceTemperatureStatus to TEMPERATURE_OVERHEATED.
+  // This should continue to be set until the new field is populated.
+  optional bool device_temperature_above_error_threshold = 15
+      [deprecated = true];
+
+  // Whether the camera is in sleep mode
+  optional bool camera_in_sleep_mode = 16;
+
+  // The current audio volume.
+  optional AudioVolumeStatus audio_volume = 17;
+
+  // The timezone on the camera, specified by its Olson id.
+  optional string device_timezone = 18;
+
+  // The status of the wifi adapter.
+  optional WifiStatus wifi_status = 19;
+
+  // The current indicator brightness setting.
+  optional IndicatorBrightnessConfiguration indicator_brightness = 20;
+
+  // The current sleep configuration.
+  optional SleepConfiguration sleep_configuration = 21;
+
+  // Information about the device's current temperature.
+  optional DeviceTemperatureStatus device_temperature_status = 23;
+
+  // Reserved for common feature development. Do not use for customization.
+  extensions 22, 24, 1000 to 2000;
+  // Reserved for customization.
+  extensions 2001 to max;
+}
+
+// The status information about the camera Wifi.
+message WifiNetworkStatus {
+  // The SSIDs of WiFi networks configured on the camera. Can either be an ASCII
+  // string which will be enclosed in double quotation marks (e.g.,
+  // "MyNetwork") or a string of hex digits which are not enclosed in quotes
+  // (e.g., 01a243f405).
+  // https://developer.android.com/reference/android/net/wifi/WifiConfiguration.html#SSID
+  repeated string configured_network_ssids = 1;
+
+  // The information about the results of the most recent WiFi scan.
+  repeated WifiScanResult scan_results = 2;
+}
+
+// Contains checksum information about a file, used to ensure data integrity
+// after a transfer.
+message FileChecksum {
+  enum ChecksumType {
+    // The checksum is a SHA1 hash of the file.
+    SHA1 = 0;
+    // The checksum type is unknown.
+    UNKNOWN_CHECKSUM_TYPE = 1;
+  }
+
+  // Which type of checksum is used.
+  optional ChecksumType checksum_type = 1 [default = UNKNOWN_CHECKSUM_TYPE];
+
+  // The checksum of the file.
+  optional bytes checksum = 2;
+}
+
+// Information about a media item.
+// NEXT ID: 13
+message Media {
+  // The name of the media. Should include extension.
+  optional string filename = 1;
+  // The size of the media in bytes.
+  optional int64 size = 2;
+  // The time that the media item was captured, specified in milliseconds since
+  // the base epoch of January 1, 1970, 00:00:00 GMT (e.g.
+  // java.util.Date.getTime()).
+  optional int64 timestamp = 3;
+  // If the media is a video, the duration of the recording in milliseconds.
+  optional int64 duration = 4;
+  // Checksum of the file (used to validate that a download succeeded). The
+  // camera MAY return multiple checksums of different types.
+  // The camera MUST have at least 1 checksum type so that clients can ensure
+  // that the user's files have not been corrupted by a transfer.
+  repeated FileChecksum checksum = 5;
+  // Reserved for common feature development. Do not use for customization.
+  extensions 6, 10, 11, 12;
+  // The width of the media frame.
+  optional int64 width = 7;
+  // The height of the media frame.
+  optional int64 height = 8;
+  // The codec used for recording this media.
+  optional EncodingFormat video_codec = 9 [default = UNKNOWN_ENCODING_FORMAT];
+}
+
+// The type of wireless authentication and encryption used by a Wi-Fi network.
+enum WpaAuthType {
+  // The network is open or the auth type is unknown.
+  NONE_UNKNOWN = 0;
+  // Wired Equivalent Privacy.
+  WEP = 1;
+  // Wi-Fi Protected Access (Pre-Shared Key)
+  WPA_PSK = 2;
+  // Wi-Fi Protected Access (Extensible Authentication Protocol)
+  WPA_EAP = 3;
+  // Wi-Fi Protected Access 2 (Pre-Shared Key)
+  WPA2_PSK = 4;
+  // Wi-Fi Protected Access 2 (Extensible Authentication Protocol)
+  WPA2_EAP = 5;
+}
+
+// The data about a Wi-Fi network from a scan.
+message WifiScanResult {
+  // The name of the access point.
+  optional string ssid = 1;
+  // The RSSI signal level in dBm.
+  optional int32 signal_level = 2;
+  // The authentication type for the network.
+  optional WpaAuthType auth_type = 3;
+  // The timestamp in microseconds since boot when the result was seen.
+  optional int64 timestamp = 4;
+}
+
+// States of the WPA supplicant for a wifi connection.
+// These correspond to values in android.net.wifi.SupplicantState and
+// wpa_supplicant_8/src/common/defs.h.
+enum WifiSupplicantState {
+  // The state is unknown/default.
+  UNKNOWN_SUPPLICANT_STATE = 0;
+
+  // This state indicates that client is not associated, but is likely to start
+  // looking for an access point. This state is entered when a connection is
+  // lost.
+  DISCONNECTED = 1;
+
+  // The network interface is disabled.
+  INTERFACE_DISABLED = 2;
+
+  // This state is entered if there are no enabled networks in the
+  // configuration.
+  INACTIVE = 3;
+
+  // This state is entered when wpa_supplicant starts scanning for a network.
+  SCANNING = 4;
+
+  // Trying to authenticate with a BSS/SSID.
+  AUTHENTICATING = 5;
+
+  // This state is entered when wpa_supplicant has found a suitable ssid and is
+  // trying to associate with it.
+  ASSOCIATING = 6;
+
+  // This state is entered when the driver reports that association has been
+  // successfully completed with an AP. If IEEE 802.1X is used (with or without
+  // WPA/WPA2), wpa_supplicant remains in this state until the IEEE 802.1X/EAPOL
+  // authentication has been completed.
+  ASSOCIATED = 7;
+
+  // This state is entered when WPA/WPA2 4-Way Handshake is started.
+  FOUR_WAY_HANDSHAKE = 8;
+
+  // This state is entered when 4-Way Key Handshake has been completed
+  // (i.e., when the supplicant sends out message 4/4) and when Group
+  // Key rekeying is started by the AP (i.e., when supplicant receives
+  // message 1/2).
+  GROUP_HANDSHAKE = 9;
+
+  // WPA_COMPLETED - All authentication completed
+  // This state is entered when the full authentication process is
+  // completed. In case of WPA2, this happens when the 4-Way Handshake is
+  // successfully completed. With WPA, this state is entered after the
+  // Group Key Handshake; with IEEE 802.1X (non-WPA) connection is
+  // completed after dynamic keys are received (or if not used, after
+  // the EAP authentication has been completed). With static WEP keys and
+  // plaintext connections, this state is entered when an association
+  // has been completed.
+  //
+  // This state indicates that the supplicant has completed its
+  // processing for the association phase and that data connection is
+  // fully configured.
+  COMPLETED = 10;
+
+  // When a client has explicitly disconnected from the network.
+  DORMANT = 11;
+}
+
+// The types of wifi connection error that can be reported.
+enum WifiConnectionErrorType {
+  // Default/no error.
+  DEFAULT_NO_CONNECTION_ERROR = 0;
+  // Indicates a generic connection failure.
+  CONNECT_FAILED = 1;
+  // Indicates that there was a problem authenticating with the network (e.g.
+  // incorrect password).
+  ERROR_AUTHENTICATING = 2;
+  // Indicates that the network could not be configured (usually a problem with
+  // the ssid/password so that the device couldn't start connecting).
+  INVALID_CONFIGURATION = 3;
+  // The wifi adapter is disabled.
+  WIFI_DISABLED = 4;
+}
+
+// Connection details for a Wifi network.
+message WifiAccessPointInfo {
+  // The name of the Wifi Access Point.
+  optional string ssid = 1;
+  // The password for the Wifi Access Point.
+  optional string password = 2;
+  // Padding bytes for the password to make the password + padding length a
+  // constant length. Adding this avoids leaking wifi password length.
+  // Receiver should ignore this field.
+  optional bytes padding = 3;
+  // If the access point is a wifi-direct network, the mac address of the owner
+  // (for joining with WifiP2PManager).
+  optional string owner_mac_address = 4;
+}
+
+// Contains the metadata for interpreting video frames as spherical
+// projections. This data is formatted as specified in the SphericalVideoV2 RFC
+// for Mp4
+// https://github.com/google/spatial-media/blob/master/docs/spherical-video-v2-rfc.md.
+// All boxes should include the entire mp4 atom (size, fourcc, and contents).
+message CameraCalibration {
+  // The header and contents of the st3d (Stereoscopic 3D Video Box) as
+  // specified in the Spherical V2 spec.
+  optional bytes st3d_box = 1;
+  // The header and contents of the sv3d (Spherical Video Box) as specified in
+  // the Spherical V2 spec.
+  optional bytes sv3d_box = 2;
+}
+
+// Messages stored in the camera's debug log which can be returned from
+// GET_DEBUG_LOGS requests.
+message DebugLogMessage {
+  // Level of the error message. Allows filtering for messages above a given
+  // level.
+  enum Level {
+    VERBOSE = 2;
+    DEBUG = 3;
+    INFO = 4;
+    WARN = 5;
+    ERROR = 6;
+    ASSERT = 7;
+  }
+
+  // The timestamp of the message (in milliseconds since Jan.1,1970).
+  optional int64 timestamp = 1;
+  // The message level.
+  optional Level level = 2;
+  // Used to identify the source of the message.
+  optional string tag = 3;
+  // The log message.
+  optional string message = 4;
+}
+
+// Contains details about a WebRTC session.
+// The session_description field contains a session description protocol offer
+// or answer from the sender of the message, and the ice_candidate list contains
+// the gathered ICE (Interactive Connectivity Establishment) candidates (which
+// correspond to potential connectivity paths).
+message WebRtcSessionDescription {
+  // The Session Description Protocol offer or answer.
+  optional string session_description = 1;
+  // IceCandidates for the sender of the message.
+  repeated IceCandidate ice_candidate = 2;
+}
+
+// The serialized form of the RTCIceCandidate interface defined in the WebRTC
+// spec (See http://w3c.github.io/webrtc-pc/#rtcicecandidate-interface and
+// https://code.webrtc.org/sdk/android/api/org/webrtc/IceCandidate.java).
+message IceCandidate {
+  // Identifier of the "media stream identification".
+  optional string sdp_mid = 1;
+  // Index of the media description in the SDP this candidate is associated
+  // with.
+  optional int32 sdp_m_line_index = 2;
+  // The session description candidate string.
+  optional string sdp = 3;
+}
+
+// Generic request to Camera API.
+// NEXT ID: 18
+message CameraApiRequest {
+  // Types of requests.
+  enum RequestType {
+    // Request the device status.
+    STATUS = 0;
+    // Request to initiate a key exchange.
+    // This is an unencrypted request over the CAMERA_PAIRING_UUID GATT
+    // service. It can only be run when the camera is in pairing mode.
+    // The request expects a KeyExchangeRequest message, and causes the camera
+    // to generate a new key pair and reply with the public key. The key is
+    // pending confirmation, so not all api functionality will be available.
+    KEY_EXCHANGE_INITIATE = 1;
+    // Key exchange finish request.
+    // This is an unencrypted request over the CAMERA_PAIRING_UUID GATT
+    // service. It can only be run when the camera is in pairing mode.
+    // It asks the camera to finalize the pairing started with
+    // KEY_EXCHANGE_INITIATE. The request will succeed if the camera has gone
+    // through a secondary authentication mechanism, e.g. entering a PIN number,
+    // or getting the user to do a specific action on the camera.
+    // The request expects a KeyExchangeRequest message with the same
+    // configuration as the one used with KEY_EXCHANGE_INITIATE, and returns
+    // success or failure.
+    KEY_EXCHANGE_FINALIZE = 2;
+    // Change configuration settings for the camera, as specified in the
+    // configuration_request field.
+    CONFIGURE = 3;
+    // Fetches debugging logs from the camera.
+    GET_DEBUG_LOGS = 5;
+    // Request the camera's recording capabilities.
+    GET_CAPABILITIES = 6;
+
+    reserved 7;
+    // Lists media stored on the camera.
+    LIST_MEDIA = 8;
+    // Fetch a thumbnail for a media item.
+    GET_THUMBNAIL = 9;
+    // Start recording video, photo, or live stream, based on the active capture
+    // mode.
+    // If the mode is an active_video_mode, this starts recording.
+    // If the mode is an active_photo_mode, a single VR photo frame is captured.
+    // If the mode is an active_live_mode, the camera begins live streaming to
+    //   the configured endpoint.
+    START_CAPTURE = 11;
+    // Stop recording video, or stop an active live stream.
+    STOP_CAPTURE = 12;
+    // Format the SD card.
+    FORMAT_SD_CARD = 13;
+    // Factory reset the camera.
+    FACTORY_RESET = 14;
+    // Start (or update) a webrtc connection to the viewfinder.
+    // The session name and description must be included in the webrtc_request
+    // field.
+    START_VIEWFINDER_WEBRTC = 15;
+    // Stop a webrtc connection to the viewfinder.
+    // The session name should be included in the webrtc_request field.
+    STOP_VIEWFINDER_WEBRTC = 16;
+    // Removes media items from the camera. The items to delete are specified in
+    // delete_media_request. Results of the requests are placed in
+    // delete_media_status in the response.
+    DELETE_MEDIA = 17;
+    // Request the device WiFi network status.
+    WIFI_NETWORK_STATUS = 18;
+    // Requests that the device make an HTTP fetch, which is used to test
+    // the network connectivity.
+    CONNECTION_TEST = 19;
+    // Requests the Stereoscopic 3D Video Box for the active video mode.
+    GET_CAMERA_ST3D_BOX = 20;
+    // Requests the Spherical Video Box for the active video mode.
+    GET_CAMERA_SV3D_BOX = 21;
+    // The request type is unknown/invalid.
+    UNKNOWN_REQUEST_TYPE = 22;
+    // Reserved. Do not use.
+    reserved 23 to 28;
+    // Used for request extensions. The request object is checked to determine
+    // the request type.
+    EXTENSIONS = 1000;
+  }
+
+  // Common information about the request.
+  message RequestHeader {
+    // Expiration time for the request (in milliseconds since 1Jan1970).
+    // The camera should reject all requests after this.
+    // REQUIRED for all requests on the CAMERA_SERVICE_UUID except STATUS
+    // (which allows the phone to calculate the clock skew before adding
+    // expiration times).
+    // OPTIONAL for CAMERA_PAIRING_UUID (and not enforced).
+    optional int64 expiration_timestamp = 1;
+
+    // The request id of the request. This should be included in the response.
+    // REQUIRED for all requests on the CAMERA_SERVICE_UUID.
+    // OPTIONAL for CAMERA_PAIRING_UUID (and not returned in response).
+    optional int64 request_id = 2;
+  }
+
+  message KeyExchangeRequest {
+    // The public key of the phone.
+    optional bytes public_key = 1;
+
+    // The phone's component of the salt for the key extraction hash.
+    optional bytes salt = 2;
+  }
+
+  // Parameters for requesting the camera's Stereoscopic 3D Video Box (should be
+  // specified with a GET_CAMERA_SV3D_BOX request).
+  message CameraSv3DBoxRequest {
+    // The index of the first byte to return in the response. If specified, the
+    // service should return a range of bytes out of the full sv3d_box.
+    optional int32 start_index = 3;
+    // The maximum number of bytes to return. Specify 0 or leave unset to
+    // default to the entire box length. To request metadata, specify 1 to limit
+    // the response to one byte of the box.
+    optional int32 length = 4;
+  }
+
+  // Parameters for requesting debug logs.
+  message DebugLogsRequest {
+    // The minimum log level for messages to return.
+    // If missing, all levels should be returned.
+    optional DebugLogMessage.Level min_level = 1;
+    // The tag of messages to return.
+    // If missing, all tags should be returned.
+    optional string tag_filter = 2;
+    // The maximum number of log entries to return.
+    optional int32 max_count = 3;
+  }
+
+  // Parameters for the LIST_MEDIA request.
+  message ListMediaRequest {
+    // The start index of the requested range of media items to fetch.
+    // Defaults to 0.
+    optional int64 start_index = 1;
+    // The number of items to fetch. If unspecified, all media items are
+    // returned.
+    optional int64 media_count = 2;
+  }
+
+  // Parameters for the GET_THUMBNAIL request.
+  message ThumbnailRequest {
+    // Filename of the media item to get a thumbnail for.
+    optional string filename = 1;
+    // The desired thumbnail width.
+    optional int32 width = 2;
+    // The desired thumbnail height.
+    optional int32 height = 3;
+
+    // The quality level of the encoder.
+    optional int32 quality = 4;
+
+    // The index of the first byte to return in the response. If specified, the
+    // service should return a range of bytes out of the full thumbnail.
+    optional int32 start_index = 5;
+    // The maximum number of bytes to return.
+    optional int32 length = 6;
+  }
+
+  // If specified on a START_CAPTURE request, contains options about that
+  // specific capture. These options apply *ONLY* to the capture request being
+  // processed and do not persist for subsequent captures.
+  message StartCaptureRequest {
+    // Specifies the number of milliseconds to capture before automatically
+    // stopping.
+    // The user may still stop by pressing the capture button or calling
+    // STOP_CAPTURE, but the camera should stop itself after the elapsed period.
+    optional int64 auto_stop_duration_ms = 1;
+  }
+
+  // Parameters for CONFIGURE request.
+  // Specified fields should be reconfigured, while unspecified fields should
+  // not be changed from their current state.
+  message ConfigurationRequest {
+    message MobileDataConfiguration {
+      // Whether to enable mobile data.
+      optional bool enabled = 1;
+    }
+
+    message UpdateConfiguration {
+      // Indicates that the user has approved an update to the specified
+      // version. This value should match the available update version.
+      optional string desired_update_version = 1;
+    }
+
+    message TimeConfiguration {
+      // The current UTC time in milliseconds since 1Jan1970.
+      optional int64 timestamp = 1;
+      // The timezone to set, specified by its Olson id.
+      optional string timezone = 2;
+    }
+
+    message WifiNetworkConfiguration {
+      // The list of WiFi SSIDs to remove from the list of configured networks.
+      // Must be one or more of the values returned by WIFI_NETWORK_STATUS in
+      // wifi_network_status.configured_networks.
+      repeated string remove_network_ssids = 1;
+      // The WiFi country code, e.g. "US". ISO_3166-1 standard.
+      // This will affect the allowed WiFi channels used by the camera.
+      optional string wifi_country_code = 2;
+    }
+
+    message WifiHotspotConfiguration {
+      // The WiFi channel preference info.
+      message ChannelPreference {
+        // Whether the client (the phone) supports 5GHz WiFi band.
+        // If false, the camera should never start an AP at 5GHz band.
+        optional bool client_supports_5ghz = 1;
+        // Whether the client (the phone) prefer to use 5GHz WiFi band.
+        // If true, the camera should make best effort to start 5ghz AP.
+        optional bool client_prefers_5ghz = 2;
+        // The preferred WiFi channel of the phone.
+        // 0 or unset means no preference.
+        optional int32 client_preferred_channel = 3;
+      }
+      // Whether to enable the camera's wifi hotspot.
+      optional bool enable_hotspot = 1;
+      // The WiFi channel preference info of the client (the phone).
+      optional ChannelPreference channel_preference = 2;
+    }
+
+    message AudioConfiguration {
+      // The requested audio volume. 0 = mute. Maximum volume is specified by
+      // the AudioVolumeStatus returned with the CameraStatus response.
+      optional int32 volume = 1;
+    }
+
+    // The capture mode to set.
+    optional CaptureMode capture_mode = 1;
+
+    // The wifi network to connect to. When specified, the camera should
+    // attempt to connect to this network.
+    optional WifiAccessPointInfo local_wifi_info = 2;
+
+    // The mobile data configuration settings.
+    optional MobileDataConfiguration mobile_data_configuration = 3;
+
+    // The update configuration.
+    optional UpdateConfiguration update_configuration = 4;
+
+    // The time configuration.
+    optional TimeConfiguration time_configuration = 5;
+
+    reserved 6;
+
+    // Specifies configuration changes to the camera's Wifi network connections.
+    optional WifiNetworkConfiguration wifi_network_configuration = 8;
+
+    // Specifies configuration requested for the camera's wifi hotspot.
+    optional WifiHotspotConfiguration wifi_hotspot_configuration = 7;
+
+    // Specifies the requested audio volume.
+    optional AudioConfiguration audio_configuration = 9;
+
+    // Specifies the requested indicator brightness.
+    optional IndicatorBrightnessConfiguration
+        indicator_brightness_configuration = 10;
+
+    // Specifies the requested sleep configuration.
+    optional SleepConfiguration sleep_configuration = 11;
+
+    // Reserved for common feature development. Do not use for customization.
+    extensions 12, 13, 1000 to 2000;
+    // For customization.
+    extensions 2001 to max;
+  }
+
+  // Details about a START_VIEWFINDER_WEBRTC or STOP_VIEWFINDER_WEBRTC
+  // request.
+  // For STOP_VIEWFINDER_WEBRTC, the offer field is ignored.
+  message WebRtcRequest {
+    // The name of the webrtc session to create/update/close.
+    optional string session_name = 1;
+    // The offer session description.
+    // If no connection exists, it is created.
+    // If the connection has already been established, it is updated.
+    // If this session description is not present, the connection is closed.
+    optional WebRtcSessionDescription offer = 2;
+  }
+
+  // Details about a DELETE_MEDIA request.
+  message DeleteMediaRequest {
+    // The name of the media item (as returned from LIST_MEDIA).
+    optional string filename = 1;
+
+    // The file checksum. The delete succeeds only if the file checksums match.
+    // If the checksums do not match, the request will fail with
+    // INVALID_REQUEST.
+    optional FileChecksum checksum = 2;
+  }
+
+  // Details about a CONNECTION_TEST request.
+  message ConnectionTestRequest {
+    // The url to fetch.
+    optional string url = 1;
+    // The connect timeout in milliseconds.
+    optional int32 connect_timeout_ms = 2;
+    // The read timeout in milliseconds.
+    optional int32 read_timeout_ms = 3;
+  }
+
+  optional RequestType type = 1 [default = UNKNOWN_REQUEST_TYPE];
+
+  optional RequestHeader header = 2;
+
+  // Details about the phone's public key and salt. Required for KEY_EXCHANGE
+  // requests.
+  optional KeyExchangeRequest key_exchange_request = 3;
+
+  // The new configuration settings to apply. Required for CONFIGURE.
+  optional ConfigurationRequest configuration_request = 4;
+
+  // The details about a Sv3DBox request (specified for
+  // GET_CAMERA_SV3D_BOX requests).
+  optional CameraSv3DBoxRequest camera_sv3d_box_request = 12;
+
+  // The details about a debug logs request (specified for GET_DEBUG_LOGS
+  // requests).
+  optional DebugLogsRequest debug_logs_request = 5;
+
+  // Details about the requested range of media to list (specified for
+  // LIST_MEDIA requests).
+  optional ListMediaRequest list_media_request = 6;
+
+  // Details about the thumbnail requested (specified for GET_THUMBNAIL
+  // requests).
+  repeated ThumbnailRequest thumbnail_request = 7;
+
+  // Information about a viewfinder webrtc connection.
+  optional WebRtcRequest webrtc_request = 8;
+
+  // Information about a DELETE_MEDIA request. Can contain multiple deletes
+  // to perform in a batch (not transactional).
+  repeated DeleteMediaRequest delete_media_request = 10;
+
+  // Information about a CONNECTION_TEST request.
+  optional ConnectionTestRequest connection_test_request = 11;
+
+  // Reserved. Do not use.
+  reserved 13, 15 to 17;
+
+  // Optional data for a START_CAPTURE request. May contain configuration that
+  // only applies to this specific capture and should not persist for later
+  // captures.
+  optional StartCaptureRequest start_capture_request = 14;
+
+  // Reserved for common feature development. Do not use for customization.
+  extensions 18, 19, 1000 to 2000;
+  // Reserved for customization.
+  extensions 2001 to max;
+}
+
+// Generic response from Camera API.
+// NEXT ID: 21
+message CameraApiResponse {
+  message ResponseStatus {
+    enum StatusCode {
+      OK = 0;
+      // The camera doesn't support this request.
+      NOT_SUPPORTED = 1;
+      // The request cannot be processed because of the camera's current mode.
+      INVALID_REQUEST = 2;
+      // There was an error handling this request, details should be included in
+      // the error_message field.
+      ERROR = 3;
+      // The camera is in pairing mode so the requested operation isn't
+      // supported.
+      ERROR_PAIRING_MODE_ACTIVE = 4;
+      // The status of the request is unknown.
+      UNKNOWN_RESPONSE_STATUS = 5;
+      // The battery is too low to perform the requested action.
+      CRITICALLY_LOW_BATTERY = 6;
+      // There isn't enough storage on the camera to perform the requested
+      // action.
+      INSUFFICIENT_STORAGE = 7;
+      // The camera got too overheated to perform the request.
+      THERMAL_ERROR = 8;
+      // The user has not authorized the action, or credentials have expired.
+      UNAUTHORIZED_REQUEST = 9;
+    }
+
+    // Overall success/failure of the request.
+    optional StatusCode status_code = 1 [default = UNKNOWN_RESPONSE_STATUS];
+
+    // Optional custom error code describing the error defined by the
+    // manufacturer.
+    optional int32 custom_error_code = 2;
+
+    // Optional additional error details for debugging.
+    optional string error_message = 3;
+  }
+
+  // The data returned from a key exchange request.
+  message KeyExchangeResponse {
+    // The public key of the camera.
+    optional bytes public_key = 1;
+
+    // The camera's component of the salt for the key extraction hash.
+    optional bytes salt = 2;
+  }
+
+  // Response from a request to list media on the camera.
+  message ListMediaResponse {
+    // The last time the media collection changed, specified in milliseconds
+    // since the base epoch of January 1, 1970, 00:00:00 GMT (e.g.
+    // java.util.Date.getTime()).
+    optional int64 last_modified_time = 1;
+
+    // The total number of media items available on the camera.
+    optional int64 total_count = 2;
+
+    // The metadata about media items in the requested range.
+    repeated Media media = 3;
+  }
+
+  message ThumbnailResponse {
+    // The thumbnail data (in the range requested).
+    // The size of this should never exceed the length specified in the
+    // request.
+    // The thumbnail can be a webp, jpg or png file. Webp is preferred since
+    // the BLE channel is so slow.
+    optional bytes data = 1;
+
+    // The CRC32 checksum of the full thumbnail.
+    optional uint32 checksum = 2;
+
+    // The total size of the full thumbnail in bytes.
+    optional int32 total_size = 3;
+  }
+
+  message St3DBoxResponse {
+    // The St3DBox data.
+    optional bytes data = 1;
+  }
+
+  message Sv3DBoxResponse {
+    // The Sv3DBox data (in the range requested). The size of this
+    // should never exceed the length specified in the request.
+    optional bytes data = 1;
+
+    // The CRC32 checksum of the full Sv3DBox.
+    optional uint32 checksum = 2;
+
+    // The total size of the full Sv3DBox in bytes.
+    optional int32 total_size = 3;
+  }
+
+  message ConnectionTestResponse {
+    // The http response code for the request (e.g. 200 for "OK").
+    // If a network/socket layer error is encountered, this should be 0.
+    optional int32 http_response_code = 1;
+    // The number of bytes received in the response.
+    optional int64 bytes_received = 2;
+    // The time in milliseconds to finish reading the response.
+    optional int64 receive_time_ms = 3;
+  }
+
+  // The response code for the request. MUST be present in all responses.
+  optional ResponseStatus response_status = 1;
+
+  // The request_id for the request that this corresponds to.
+  optional int64 request_id = 2;
+
+  // The camera's status, returned from a STATUS request.
+  optional CameraStatus camera_status = 3;
+
+  // Key exchange response, returned from the Pairing endpoint for a
+  // KEY_EXCHANGE request.
+  optional KeyExchangeResponse key_exchange_response = 4;
+
+  // Debug logs from the camera, returned from a GET_DEBUG_LOGS request.
+  repeated DebugLogMessage debug_logs = 6;
+
+  // Camera capabilities, returned from a GET_CAPABILITIES request.
+  optional CameraCapabilities capabilities = 7;
+
+  // The media items returned from a LIST_MEDIA request.
+  optional ListMediaResponse media = 8;
+
+  // The media data (returned from GET_THUMBNAIL requests as a jpeg file).
+  // The response should contain an entry for each ThumbnailRequest entry in the
+  // request.
+  repeated ThumbnailResponse thumbnail = 9;
+
+  reserved 10;
+
+  // If a WebRtc Session was created (in response to an Offer in
+  // START_VIEWFINDER_WEBRTC), this contains the session description of the
+  // answer.
+  optional WebRtcSessionDescription webrtc_answer = 11;
+
+  // Response statuses for DeleteMedia requests.
+  repeated ResponseStatus delete_media_status = 13;
+
+  // The camera's Wifi status. Returned in response to WIFI_NETWORK_STATUS
+  // request.
+  optional WifiNetworkStatus wifi_network_status = 14;
+
+  // The results of the connection test. Returned in response to CONNECTION_TEST
+  // requests.
+  optional ConnectionTestResponse connection_test_response = 15;
+
+  // The response to a GET_CAMERA_ST3D_BOX request.
+  optional St3DBoxResponse st3d_box_response = 16;
+
+  // The response to a GET_CAMERA_SV3D_BOX request.
+  optional Sv3DBoxResponse sv3d_box_response = 17;
+
+  // Reserved for common feature development. Do not use for customization.
+  extensions 18, 19, 20, 1000 to 2000;
+  // Reserved for customization.
+  extensions 2001 to max;
+}

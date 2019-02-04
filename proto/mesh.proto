@@ -1,0 +1,76 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto2";
+
+package vr180;
+
+option java_package = "com.google.vr180";
+option java_outer_classname = "MeshProto";
+
+// A basic 3D triangle mesh, with a single set of texture coordinates.
+message Mesh {
+  // A single 3d vertex.
+  message Vertex {
+    // The position of a vertex in 3-space.
+    // We assume an OpenGL-style right-handed coordinate system.
+    message Position {
+      required float x = 1;
+      required float y = 2;
+      required float z = 3;
+    }
+    // 2D texture coordinate of this vertex, in [0, 1], where (0,0) is the lower
+    // left corner, and (1,1) is the upper right corner.
+    message TextureCoordinate {
+      required float u = 1;
+      required float v = 2;
+    }
+    optional Position position = 1;
+    optional TextureCoordinate texture_coordinate = 2;
+  }
+
+  enum GeometryType {
+    UNSPECIFIED_GEOMETRY_TYPE = 0;
+    // Every 3 indices specifies a triangle.
+    TRIANGLES = 1;
+    // After the first 2 indices, every subsequent index forms a triangle using
+    // that vertex, and the 2 previous indices.
+    TRIANGLE_STRIP = 2;
+    // Similar to a triangle strip, except the very first vertex is shared by
+    // all triangles.
+    TRIANGLE_FAN = 3;
+  }
+
+  // The vertices this mesh is made up of.
+  repeated Vertex vertices = 1;
+
+  // How to render this mesh.
+  optional GeometryType geometry_type = 2 [default = TRIANGLES];
+
+  // Indices into the array of vertices. How these are interpreted depends on
+  // geometry_type.
+  //
+  // We store 32 bit indices in the proto for simplicity, but an implementation
+  // is free to use 16 bit indices if this field specifies less than 2^16
+  // values.
+  //
+  // If this is empty, we'll assume |vertices| should be interpreted in order
+  // (as if we had sequential indices [0, 1, 2, 3, ... , vertices.size() - 1]).
+  repeated int32 indices = 3;
+}
+
+message StereoMeshConfig {
+  optional Mesh left_eye = 1;
+  optional Mesh right_eye = 2;
+}

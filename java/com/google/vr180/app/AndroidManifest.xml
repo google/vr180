@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright 2018 Google LLC
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.google.vr180.camera"
+    android:versionCode="1"
+    android:versionName="1.0">
+
+  <!--
+    Use targetSdkVersion 22 to avoid runtime permission requests.
+    For actual cameras, you may target a higher API level when the camera app runs as a system app.
+  -->
+  <uses-sdk
+      android:minSdkVersion="19"
+      android:targetSdkVersion="22"/>
+
+  <uses-permission android:name="android.permission.REBOOT"/>
+  <uses-permission android:name="android.permission.CAMERA"/>
+  <uses-permission android:name="android.permission.RECORD_AUDIO" />
+  <uses-permission android:name="android.permission.INTERNET"/>
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+  <uses-permission android:name="android.permission.WAKE_LOCK"/>
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+  <uses-permission android:name="android.permission.BLUETOOTH" />
+  <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+  <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+  <uses-permission android:name="android.permission.OVERRIDE_WIFI_CONFIG" />
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+  <uses-permission android:name="android.permission.WRITE_MEDIA_STORAGE"/>
+  <uses-permission android:name="android.permission.SET_TIME"/>
+  <uses-permission android:name="android.permission.SET_TIME_ZONE"/>
+  <uses-permission android:name="android.permission.CONNECTIVITY_INTERNAL"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+
+  <uses-feature android:glEsVersion="0x00020000" android:required="true"/>
+  <uses-feature android:name="android.hardware.camera2.full" />
+  <application
+      android:name="com.google.vr180.app.CameraApplication"
+      android:allowBackup="false"
+      android:icon="@mipmap/camera_logo"
+      android:label="@string/app_name"
+      android:theme="@style/app_theme"
+      android:largeHeap="true"
+      android:supportsRtl="true">
+
+    <!-- Main UI activity -->
+    <activity
+        android:name="com.google.vr180.app.MainActivity"
+        android:theme="@style/app_theme_main"
+        android:configChanges="orientation|keyboardHidden|screenSize"
+        android:screenOrientation="landscape"
+        android:launchMode="singleTask">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+      </intent-filter>
+    </activity>
+
+    <!-- Settings UI activity -->
+    <activity
+        android:name="com.google.vr180.app.CameraSettingsActivity"
+        android:theme="@style/app_theme_main"
+        android:configChanges="orientation|keyboardHidden|screenSize"
+        android:screenOrientation="landscape"
+        android:launchMode="singleTask"
+        android:exported="false"/>
+
+    <!-- Run camera app in background mode (for devices without a screen). -->
+    <service android:name="com.google.vr180.app.MainService"
+        android:exported="true">
+    </service>
+
+    <!-- Boot receiver to start MainActivity on boot. -->
+    <receiver android:name="com.google.vr180.app.BootReceiver" android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED" />
+      </intent-filter>
+    </receiver>
+  </application>
+</manifest>

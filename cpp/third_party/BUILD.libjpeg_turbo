@@ -1,0 +1,276 @@
+# Copyright 2018 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])
+
+genrule(
+    name = "jconfig_h",
+    outs = ["jconfig.h"],
+    cmd = """cat > $(@) << 'EOF'
+/* Version ID for the JPEG library.
+ * Might be useful for tests like "#if JPEG_LIB_VERSION >= 60".
+ */
+#define JPEG_LIB_VERSION 62
+
+/* libjpeg-turbo version */
+#define LIBJPEG_TURBO_VERSION 1.5.2
+
+/* libjpeg-turbo version in integer form */
+#define LIBJPEG_TURBO_VERSION_NUMBER 1005002
+
+/* Support arithmetic encoding */
+#define C_ARITH_CODING_SUPPORTED 1
+
+/* Support arithmetic decoding */
+#define D_ARITH_CODING_SUPPORTED 1
+
+/*
+ * Define BITS_IN_JSAMPLE as either
+ *   8   for 8-bit sample values (the usual setting)
+ *   12  for 12-bit sample values
+ * Only 8 and 12 are legal data precisions for lossy JPEG according to the
+ * JPEG standard, and the IJG code does not support anything else!
+ * We do not support run-time selection of data precision, sorry.
+ */
+
+#define BITS_IN_JSAMPLE  8      /* use 8 or 12 */
+
+/* Define to 1 if you have the <locale.h> header file. */
+#define HAVE_LOCALE_H 1
+
+/* Define to 1 if you have the <stddef.h> header file. */
+#define HAVE_STDDEF_H 1
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#define HAVE_STDLIB_H 1
+
+/* Define to 1 if the system has the type `unsigned char'. */
+#define HAVE_UNSIGNED_CHAR 1
+
+/* Define to 1 if the system has the type `unsigned short'. */
+#define HAVE_UNSIGNED_SHORT 1
+
+/* Compiler does not support pointers to undefined structures. */
+/* #undef INCOMPLETE_TYPES_BROKEN */
+
+/* Support in-memory source/destination managers */
+#define MEM_SRCDST_SUPPORTED 1
+
+/* Define if you have BSD-like bzero and bcopy in <strings.h> rather than
+   memset/memcpy in <string.h>. */
+/* #undef NEED_BSD_STRINGS */
+
+/* Define if you need to include <sys/types.h> to get size_t. */
+#define NEED_SYS_TYPES_H 1
+
+/* Define if your (broken) compiler shifts signed values as if they were
+   unsigned. */
+/* #undef RIGHT_SHIFT_IS_UNSIGNED */
+
+/* Use accelerated SIMD routines. */
+#define WITH_SIMD 1
+
+/* Define to 1 if type `char' is unsigned and you are not using gcc.  */
+#ifndef __CHAR_UNSIGNED__
+/* # undef __CHAR_UNSIGNED__ */
+#endif
+
+/* Define to empty if `const' does not conform to ANSI C. */
+/* #undef const */
+
+/* Define to `unsigned int' if <sys/types.h> does not define. */
+/* #undef size_t */
+EOF
+""",
+)
+
+genrule(
+    name = "jconfigint_h",
+    outs = ["jconfigint.h"],
+    cmd = """cat > $(@) << 'EOF'
+#define BUILD "20170904"
+#define INLINE inline __attribute__((always_inline))
+#define PACKAGE_NAME "libjpeg-turbo"
+#define VERSION "1.5.2"
+#define SIZEOF_SIZE_T 8
+EOF
+""",
+)
+
+libjpegturbo_copts_neon = [
+    "-D__ARM_NEON__",
+    "-march=armv7-a",
+    "-fprefetch-loop-arrays",
+    "-mfloat-abi=softfp",
+]
+
+libjpegturbo_copts = [
+    "-O3",
+    "-w",
+] + libjpegturbo_copts_neon
+
+JPEG_SOURCES = [
+    "jcapimin.c",
+    "jcapistd.c",
+    "jccoefct.c",
+    "jccolor.c",
+    "jcdctmgr.c",
+    "jchuff.c",
+    "jcinit.c",
+    "jcmainct.c",
+    "jcmarker.c",
+    "jcmaster.c",
+    "jcomapi.c",
+    "jcparam.c",
+    "jcphuff.c",
+    "jcprepct.c",
+    "jcsample.c",
+    "jctrans.c",
+    "jdapimin.c",
+    "jdapistd.c",
+    "jdatadst.c",
+    "jdatasrc.c",
+    "jdcoefct.c",
+    "jdcolor.c",
+    "jddctmgr.c",
+    "jdhuff.c",
+    "jdinput.c",
+    "jdmainct.c",
+    "jdmarker.c",
+    "jdmaster.c",
+    "jdmerge.c",
+    "jdphuff.c",
+    "jdpostct.c",
+    "jdsample.c",
+    "jdtrans.c",
+    "jerror.c",
+    "jfdctflt.c",
+    "jfdctfst.c",
+    "jfdctint.c",
+    "jidctflt.c",
+    "jidctfst.c",
+    "jidctint.c",
+    "jidctred.c",
+    "jmemmgr.c",
+    "jmemnobs.c",
+    "jquant1.c",
+    "jquant2.c",
+    "jutils.c",
+    "jaricom.c",
+    "jcarith.c",
+    "jdarith.c",
+]
+
+cc_library(
+    name = "jpeg",
+    hdrs = ["jpeglib.h"],
+    include_prefix = "libjpeg_turbo",
+    deps = [":libjpeg_turbo_srcs"],
+    copts = libjpegturbo_copts,
+)
+
+cc_library(
+    name = "libjpeg_turbo_srcs",
+    srcs = JPEG_SOURCES + [
+        "jchuff.h",
+        "jdcoefct.h",
+        "jdct.h",
+        "jdhuff.h",
+        "jdmainct.h",
+        "jdmaster.h",
+        "jdsample.h",
+        "jmemsys.h",
+        "jpegint.h",
+        "jpegcomp.h",
+        "jconfigint.h",
+        "jpeg_nbits_table.h",
+        "jversion.h",
+    ],
+    hdrs = [
+        "jccolext.c",
+        "jconfig.h",
+        "jdcol565.c",
+        "jdcolext.c",
+        "jdmrg565.c",
+        "jdmrgext.c",
+        "jerror.h",
+        "jinclude.h",
+        "jmorecfg.h",
+        "jpeglib.h",
+        "jstdhuff.c",
+    ],
+    copts = libjpegturbo_copts,
+    includes = ["."],
+    deps = [
+        ":simd",
+    ],
+)
+
+
+cc_library(
+    name = "simd",
+    copts = libjpegturbo_copts,
+    includes = ["simd"],
+    linkstatic = 1,
+    # Note: This dep can be replaced for different os/cpu targets.
+    deps = [":libjpegturbo_simd_armv7a"],
+)
+
+SIMD_SRCS = [
+    "jchuff.h",
+    "jconfig.h",
+    "jdct.h",
+    "jerror.h",
+    "jinclude.h",
+    "jmorecfg.h",
+    "jpegint.h",
+    "jpeglib.h",
+    "jsimd.h",
+    "jsimddct.h",
+    "simd/jsimd.h",
+]
+
+cc_library(
+    name = "libjpegturbo_simd_armv7a",
+    srcs = [
+        "simd/arm/jsimd.c",
+        "simd/arm/jsimd_neon.S",
+    ] + SIMD_SRCS,
+    copts = libjpegturbo_copts,
+    includes = ["simd/arm"],
+)
+
+cc_library(
+    name = "libjpegturbo_simd_armv8a",
+    srcs = [
+        "simd/arm64/jsimd.c",
+        "simd/arm64/jsimd_neon.S",
+    ] + SIMD_SRCS,
+    copts = libjpegturbo_copts,
+    includes = ["simd/arm64"],
+    deps = ["@com_google_absl//absl/base:core_headers"],
+)
+
+cc_library(
+    name = "libjpegturbo_simd_none",
+    srcs = [
+        "jsimd_none.c",
+    ] + SIMD_SRCS,
+    copts = libjpegturbo_copts,
+    includes = ["."],
+)

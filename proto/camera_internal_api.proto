@@ -1,0 +1,120 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Protos for messages used for camera internal APIs.
+
+syntax = "proto2";
+
+package vr180;
+option java_package = "com.google.vr180";
+option java_outer_classname = "CameraInternalApi";
+
+// The camera's state.
+enum CameraState {
+  // The camera is being actively used.
+  DEFAULT_ACTIVE = 0;
+  // The camera is not actively used. UI-related resources should be released,
+  // i.e. viewfinder. Bluetooth and WiFi should be turned off to save battery.
+  INACTIVE = 1;
+}
+
+// Camera's internal status which is only visible to the camera app.
+message CameraInternalStatus {
+  enum PairingStatus {
+    // We are not advertising on the pairing UUID.
+    DEFAULT_NOT_ADVERTISING = 0;
+    // We are advertising on the pairing UUID.
+    ADVERTISING = 1;
+    // We had a pairing request, we need user confirmation before proceeding.
+    WAITING_FOR_USER_CONFIRMATION = 2;
+    // Timeout while waiting for user confirmation.
+    USER_CONFIRMATION_TIMEOUT = 3;
+    // We succeeded in pairing.
+    PAIRED = 4;
+  }
+
+  // Camera's pairing status
+  optional PairingStatus pairing_status = 1;
+  // Connected devices' MAC addresses
+  repeated string connected_devices = 2;
+  // Camera's state
+  optional CameraState camera_state = 3;
+}
+
+// Generic request to camera internal API.
+message CameraInternalApiRequest {
+
+  // Types of requests.
+  enum RequestType {
+    // Unknown.
+    UNKNOWN = 0;
+    // Get the camera's internal status.
+    INTERNAL_STATUS = 1;
+    // Start pairing.
+    START_PAIRING = 2;
+    // Confirm pairing.
+    CONFIRM_PAIRING = 3;
+    // Cancel pairing.
+    CANCEL_PAIRING = 4;
+    // Internal configuration request
+    CONFIGURE = 5;
+  }
+
+  // Parameters for CONFIGURE request.
+  // Specified fields should be reconfigured, while unspecified fields should
+  // not be changed from their current state.
+  message ConfigurationRequest {
+    optional CameraState camera_state = 1;
+  }
+
+  // The type of the request.
+  optional RequestType request_type = 1;
+  // Configuration request.
+  optional ConfigurationRequest configuration_request = 2;
+}
+
+// Generic response to camera internal API request.
+message CameraInternalApiResponse {
+  message ResponseStatus {
+    enum StatusCode {
+      // Unknown response status.
+      UNKNOWN = 0;
+      // OK status.
+      OK = 1;
+      // The camera doesn't support this request.
+      NOT_SUPPORTED = 2;
+      // The request cannot be processed because of the camera's current mode.
+      INVALID_REQUEST = 3;
+      // There was an error handling this request, details should be included in
+      // the error_message field.
+      ERROR = 4;
+    }
+
+    // Overall success/failure of the request.
+    optional StatusCode status_code = 1;
+
+    // Optional custom error code describing the error defined by the
+    // manufacturer.
+    optional int32 custom_error_code = 2;
+
+    // Optional additional error details for debugging.
+    optional string error_message = 3;
+  }
+
+  // The response code for the request. MUST be present in all responses.
+  optional ResponseStatus response_status = 1;
+
+  // The camera's internal status, returned from an INTERNAL_STATUS request.
+  optional CameraInternalStatus internal_status = 2;
+}

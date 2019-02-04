@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright 2018 Google LLC
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+  <android.support.v7.widget.Toolbar
+      android:id="@+id/app_settings_toolbar"
+      app:title="@string/camera_settings_title"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:fitsSystemWindows="true"
+      android:elevation="4dp"
+      android:minHeight="?attr/actionBarSize"/>
+  <ScrollView
+      android:id="@+id/camera_settings_view"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:layout_margin="15dp"
+      android:orientation="vertical">
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:paddingBottom="8dp"
+      android:orientation="vertical">
+    <!-- Capture settings. -->
+    <TextView
+        android:text="@string/camera_settings_capture"
+        style="@style/SettingsHeader"/>
+    <LinearLayout
+        android:id="@+id/camera_settings_capture_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <LinearLayout
+            android:id="@+id/camera_settings_change_video_mode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+          <TextView
+              android:text="@string/camera_settings_change_video_mode"
+              style="@style/SettingsHeader"/>
+          <TextView
+              android:id="@+id/video_mode"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"/>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/camera_settings_change_photo_mode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+          <TextView
+              android:text="@string/camera_settings_change_photo_mode"
+              style="@style/SettingsHeader"/>
+          <TextView
+              android:id="@+id/photo_mode"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"/>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/camera_settings_change_live_stream_mode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+          <TextView
+              android:text="@string/camera_settings_change_live_stream_mode"
+              style="@style/SettingsHeader"/>
+          <TextView
+              android:id="@+id/live_mode"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"/>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+          <TextView
+              android:id="@+id/camera_settings_change_iso_level"
+              android:text="@string/camera_settings_change_iso_level"
+              style="@style/SettingsHeader"/>
+          <TextView
+              android:id="@+id/camera_settings_change_flat_color"
+              android:text="@string/camera_settings_change_flat_color"
+              style="@style/SettingsHeader"/>
+          <TextView
+              android:id="@+id/camera_settings_change_white_balance_mode"
+              android:text="@string/camera_settings_change_white_balance_mode"
+              style="@style/SettingsHeader"/>
+        </LinearLayout>
+    </LinearLayout>
+  </LinearLayout>
+  </ScrollView>
+</LinearLayout>

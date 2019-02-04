@@ -1,0 +1,112 @@
+# Copyright 2018 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "base",
+    hdrs = [
+        "internal/xmpmeta/external/base/disable_warnings.h",
+        "internal/xmpmeta/external/base/integral_types.h",
+        "internal/xmpmeta/external/base/macros.h",
+        "internal/xmpmeta/external/base/port.h",
+        "internal/xmpmeta/external/base/reenable_warnings.h",
+    ],
+    includes = ["internal/xmpmeta/external"],
+)
+
+cc_library(
+    name = "strings",
+    srcs = [
+        "internal/xmpmeta/external/strings/ascii_ctype.cc",
+        "internal/xmpmeta/external/strings/case.cc",
+        "internal/xmpmeta/external/strings/escaping.cc",
+        "internal/xmpmeta/external/strings/numbers.cc",
+    ],
+    hdrs = [
+        "internal/xmpmeta/external/strings/ascii_ctype.h",
+        "internal/xmpmeta/external/strings/case.h",
+        "internal/xmpmeta/external/strings/escaping.h",
+        "internal/xmpmeta/external/strings/fastmem.h",
+        "internal/xmpmeta/external/strings/numbers.h",
+        "internal/xmpmeta/external/strings/util.h",
+    ],
+    includes = ["internal/xmpmeta/external"],
+    deps = [
+        ":base",
+        "@com_google_glog//:glog"
+    ],
+)
+
+cc_library(
+    name = "xmpmeta",
+    srcs = [
+        "internal/xmpmeta/base64.cc",
+        "internal/xmpmeta/file.cc",
+        "internal/xmpmeta/gaudio.cc",
+        "internal/xmpmeta/gimage.cc",
+        "internal/xmpmeta/gpano.cc",
+        "internal/xmpmeta/jpeg_io.cc",
+        "internal/xmpmeta/md5.cc",
+        "internal/xmpmeta/photo_sphere_writer.cc",
+        "internal/xmpmeta/vr_photo_writer.cc",
+        "internal/xmpmeta/xmp_const.cc",
+        "internal/xmpmeta/xmp_data.cc",
+        "internal/xmpmeta/xmp_parser.cc",
+        "internal/xmpmeta/xmp_writer.cc",
+        "internal/xmpmeta/xml/const.cc",
+        "internal/xmpmeta/xml/deserializer_impl.cc",
+        "internal/xmpmeta/xml/search.cc",
+        "internal/xmpmeta/xml/serializer_impl.cc",
+        "internal/xmpmeta/xml/utils.cc",
+    ],
+    hdrs = glob([
+        "includes/xmpmeta/gaudio.h",
+        "includes/xmpmeta/gimage.h",
+        "includes/xmpmeta/gpano.h",
+        "includes/xmpmeta/jpeg_io.h",
+        "includes/xmpmeta/md5.h",
+        "includes/xmpmeta/pano_meta_data.h",
+        "includes/xmpmeta/photo_sphere_writer.h",
+        "includes/xmpmeta/version.h",
+        "includes/xmpmeta/vr_photo_writer.h",
+        "includes/xmpmeta/xmp_const.h",
+        "includes/xmpmeta/xmp_data.h",
+        "includes/xmpmeta/xmp_parser.h",
+        "includes/xmpmeta/xmp_writer.h",
+        "includes/xmpmeta/xmpmeta.h",
+        "internal/xmpmeta/base64.h",
+        "internal/xmpmeta/file.h",
+        "internal/xmpmeta/xml/const.h",
+        "internal/xmpmeta/xml/deserializer.h",
+        "internal/xmpmeta/xml/deserializer_impl.h",
+        "internal/xmpmeta/xml/search.h",
+        "internal/xmpmeta/xml/serializer.h",
+        "internal/xmpmeta/xml/serializer_impl.h",
+        "internal/xmpmeta/xml/utils.h",
+    ]),
+    includes = [
+        "includes",
+        "internal",
+        "internal/xmpmeta",
+    ],
+    deps = [
+        ":base",
+        ":strings",
+        "@com_google_glog//:glog",
+        "@libxml//:libxml",
+    ],
+)

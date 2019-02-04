@@ -1,0 +1,32 @@
+<!--
+  Copyright 2018 Google LLC
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<resources>
+  <string name="app_name">VR180 Camera</string>
+  <string name="camera_settings_capture">Capture mode</string>
+  <string name="camera_settings_change_video_mode">Video</string>
+  <string name="camera_settings_change_photo_mode">Photo</string>
+  <string name="camera_settings_change_live_stream_mode">Live stream</string>
+  <string name="camera_settings_change_white_balance_mode">White Balance</string>
+  <string name="camera_settings_change_iso_level">ISO level</string>
+  <string name="camera_settings_change_flat_color">Flat color</string>
+  <string name="camera_settings_change_success">Configuration succeeded</string>
+  <string name="camera_settings_change_failure">Configuration failed (Are you recording?)</string>
+  <string name="camera_settings_change_updating">Updating. Please wait&#8230;</string>
+  <string name="camera_settings_iso_auto">Auto</string>
+  <string name="camera_settings_title">Camera settings</string>
+  <string name="shutter_button_text">shutter</string>
+  <string name="mode_button_text">mode</string>
+</resources>
