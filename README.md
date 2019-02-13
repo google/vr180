@@ -50,12 +50,12 @@ correctness of the format implementation.
 # Getting Started
 
 ## Prerequisite
-The reference camera app uses the [Bazel] (https://bazel.build/) build system. The following tools need to be installed:
+The reference camera app uses the [Bazel](https://bazel.build/) build system. The following tools need to be installed:
 
-* Setup [Android SDK] (https://developer.android.com/studio/) and `export ANDROID_HOME=$HOME/Android/Sdk/`
-* Setup [Android NDK] (https://developer.android.com/ndk/downloads/) and `export ANDROID_NDK_HOME=$HOME/Android/Sdk/ndk-bundle`
-* Setup [Maven] (https://maven.apache.org/install.html)
-* Setup [Bazel] (https://docs.bazel.build/versions/master/install-ubuntu.html)
+* Setup [Android SDK](https://developer.android.com/studio/) and `export ANDROID_HOME=$HOME/Android/Sdk/`
+* Setup [Android NDK](https://developer.android.com/ndk/downloads/) and `export ANDROID_NDK_HOME=$HOME/Android/Sdk/ndk-bundle`
+* Setup [Maven](https://maven.apache.org/install.html)
+* Setup [Bazel](https://docs.bazel.build/versions/master/install-ubuntu.html)
 
 ### Hardware
 
@@ -91,8 +91,8 @@ not have stereo effect.
 Pair it with the VR180 companion app enables richer functionality, including
 live streaming and photo/video download, viewing, and sharing.
 
-* [Android VR180 App] (https://play.google.com/store/apps/details?id=com.google.vr.eva)
-* [iOS VR180 App] (https://itunes.apple.com/us/app/vr180/id1345095721)
+* [Android VR180 App](https://play.google.com/store/apps/details?id=com.google.vr.eva)
+* [iOS VR180 App](https://itunes.apple.com/us/app/vr180/id1345095721)
 
 **Note:** It is also possible to develop your own companion app following the
 interface defined in `/proto` and matching the communication protocal in
@@ -121,7 +121,7 @@ To pair with the companion app, prepare two phones and follow these steps:
   native libraries (.so files) to `/system/lib/` or `/system/lib64/`.
   See the permissions used in the AndroidManifest.xml file for details.
 * If you encounter similar
-  [issues] (https://github.com/bazelbuild/bazel/issues/6814) for
+  [issues](https://github.com/bazelbuild/bazel/issues/6814) for
   `bazel mobile-install`, try using `bazel build` and then `adb install`.
 
 # Code Structure
@@ -138,4 +138,4 @@ To pair with the companion app, prepare two phones and follow these steps:
 | photo    | cpp/photo                     | VR180 photo format writer. |
 | video    | cpp/video                     | VR180 video format writer. |
 | sensor fusion | cpp/sensor_fusion        | On-device orientation estimation based on gyroscope and accelerometer. |
-| proto    | proto                         | The external (with the companion app) and internal data interface definition using [Protocol Buffers] (https://developers.google.com/protocol-buffers/). |
+| proto    | proto                         | The external (with the companion app) and internal data interface definition using [Protocol Buffers](https://developers.google.com/protocol-buffers/). |
